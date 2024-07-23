@@ -17,9 +17,11 @@ async function bootstrap() {
     .setVersion('1.0')
     .addCookieAuth(AuthEnum.ACCESS_TOKEN)
     .build();
+
   const document = SwaggerModule.createDocument(app, config, {
     include: [PostModule, UsersModule],
   });
+
   SwaggerModule.setup('api', app, document, {
     swaggerOptions: {
       defaultModelsExpandDepth: -1,

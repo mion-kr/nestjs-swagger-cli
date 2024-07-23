@@ -1,73 +1,167 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# 개요
+이 프로젝트의 목적은 다음과 같습니다.
+1. NestJS Plugin - Swagger cli 테스트
+2. Jwt + Cookie를 활용한 인증 테스트
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Swagger Cli
+1. nest-cli.json 파일에 플러그인 설정을 추가 합니다.
+  ```json
+      "plugins": [
+        {
+          "name": "@nestjs/swagger",
+          "options": {
+            "classValidatorShim": true,
+            "introspectComments": true,
+            "dtoKeyOfComment": "description",
+            "controllerKeyOfComment": "summary",
+            "controllerFileNameSuffix": ".controller.ts"
+          }
+        }
+      ]
+  ```
 
-## Description
+2. dto 파일에 다음과 같이 주석을 통해 ApiProperty와 동일한 기능을 추가할 수 있습니다.
+```typescript
+export class CreatePostDto {
+  /**
+   * 포스트의 제목 입니다.
+   * @example 제목입니다.
+   */
+  @ApiProperty({
+    example: "제목입니다.",
+    description: "포스트의 제목 입니다."
+  })
+  @IsString()
+  title: string;
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+  /**
+   * 포스트 내용
+   * @example 내요내요요용요요요
+   */
+  @IsString({ message: '' })
+  content?: string;
 
-## Installation
+  /**
+   * 이미지 url. 업로드한 후 response 된 url을 입력 합니다.
+   * @example a;sldkjfasd;fljds.jpg
+   */
+  imageUrls?: string;
 
-```bash
-$ pnpm install
+  /**
+   * 상태
+   * @example DELETE
+   */
+  status: PostStatus;
+}
+```
+![alt text](images/image-1.png)
+
+
+3. Controller에서 ApiOperation와 동일한 기능을 추가할 수 있습니다.
+```typescript
+  /**
+   * [마일스톤 2024 v3] 등록
+   */
+  @Post()
+  @ApiCreatedResponse({ description: '등록 성공' })
+  async create(@Body() dto: CreatePostDto) {
+    return undefined;
+  }
+```
+![alt text](images/image-2.png)
+
+---
+## Jwt + Cookie
+1. 로그인 API를 요청하면 다음과 같이 쿠키가 생성 됩니다.
+![alt text](images/image-3.png)
+2. 쿠키가 생성된 상태에서 인증이 필요한 API를 요청하면 됩니다.
+![alt text](images/image-4.png)
+---
+### 셋팅 방법
+1. cookie-parser 설치
+`pnpm i cookie-parser`
+`pnpm i -D @types/cookie-parser`
+
+2. cookie-parser를 사용하도록 설정 + swagger에서 쿠키 인증을 사용하도록 설정
+```typescript
+import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as cookieParser from 'cookie-parser';
+import { AppModule } from './app.module';
+import { AuthEnum } from './auth/enum/auth.enum';
+import { PostModule } from './post/post.module';
+import { UsersModule } from './users/users.module';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  app.use(cookieParser());
+
+  const config = new DocumentBuilder()
+    .setTitle('스웨거')
+    .setDescription('The cats API description')
+    .setVersion('1.0')
+    .addCookieAuth(AuthEnum.ACCESS_TOKEN)
+    .build();
+....
+
 ```
 
-## Running the app
+3. jwt strategy
+```typescript
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { PassportStrategy } from '@nestjs/passport';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import { UsersService } from '../../users/users.service';
+import { AuthEnum } from '../enum/auth.enum';
+import { TokenPayload } from '../interfaces/token-payload.interface';
 
-```bash
-# development
-$ pnpm run start
+@Injectable()
+export class JwtStrategy extends PassportStrategy(Strategy) {
+  constructor(
+    configService: ConfigService,
+    private readonly usersService: UsersService,
+  ) {
+    super({
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        (request: any) =>
+          request?.cookies?.[AuthEnum.ACCESS_TOKEN] ??
+          request?.[AuthEnum.ACCESS_TOKEN], // 첫번째는 http 요청, 두번째는 rpc 요청에 대응
+      ]),
+      secretOrKey: configService.get('JWT_SECRET'),
+    });
+  }
 
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+  async validate({ userId }: TokenPayload) {
+    return this.usersService.getUser(userId);
+  }
+}
 ```
 
-## Test
-
-```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+4. controller에서 쿠키 인증을 사용하도록 수정
+```typescript
+@ApiTags('포스트')
+@Controller('post')
+@ApiCookieAuth(AuthEnum.ACCESS_TOKEN)
+@UseGuards(JwtAuthGuard)
+export class PostController {
+  /**
+   * [마일스톤 2024 v3] 등록
+   */
+  @Post()
+  @ApiCreatedResponse({ description: '등록 성공' })
+  async create(@Body() dto: CreatePostDto) {
+    return undefined;
+  }
+}
 ```
 
-## Support
+5. 인증 enum 코드
+```typescript
+export enum AuthEnum {
+  ACCESS_TOKEN = 'accessToken',
+}
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](LICENSE).
+```

@@ -1,5 +1,9 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
-import { ApiCookieAuth, ApiCreatedResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiCookieAuth,
+  ApiCreatedResponse,
+  ApiTags
+} from '@nestjs/swagger';
 import { AuthEnum } from '../auth/enum/auth.enum';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreatePostDto } from './dto/create.post.dto';
